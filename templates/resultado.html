@@ -6,6 +6,12 @@
     <link href="css/stiles.css" rel="stylesheet">
 </head>
 <body>
-<h1>tu resultado es: {{resultado}}</h1>
+    <h1>Resultados de la Detección</h1>
+
+    <ul>
+        {% for class_name, prediction in zip(class_names, predictions) %}
+            <li>{{ class_name }}: {{ prediction }}</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

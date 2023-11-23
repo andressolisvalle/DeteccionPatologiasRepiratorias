@@ -1,8 +1,11 @@
-import cv2
+from io import BytesIO
+#from tkinter import Image
+from PIL import Image
 import numpy as np
+import skimage
 from flask import Flask, render_template, request
 from keras.models import load_model
-from werkzeug.debug import console
+from skimage.color import rgb2gray
 
 app = Flask(__name__)
 
@@ -14,22 +17,23 @@ def index():
 
 @app.route('/detect', methods=['POST'])
 def detect():
-    modelo_cargado = load_model('modelo_neumonia.h5')
+    try:
+        response = request.files['xray_image']
+        model = load_model('modelo_neumonia2.h5')
+        class_names = ['NORMAL', 'NEUMONIA']
 
-    # Obtener la imagen subida desde la solicitud
-    imagen_subida = request.files['xray_image']
+        img = Image.open(BytesIO(response.read()))
+        np_img = np.array(img)
+        bw_image = skimage.transform.resize(np_img, (150, 120, 3), mode='constant', anti_aliasing=True)
+        bw_image = rgb2gray(bw_image)
+        x = np.zeros((1, 150, 120))
+        x[0] = np.array(bw_image)
+        x_reshaped = x.reshape(len(x), 150, 120, 1)
+        predictions = model.predict(x_reshaped)
+    except Exception as e:
+        return f"Error: {str(e)}"
 
-    # Procesar la imagen para que coincida con las dimensiones esperadas por el modelo
-    img = cv2.imdecode(np.fromstring(imagen_subida.read(), np.uint8), cv2.IMREAD_UNCHANGED)
-    img = cv2.resize(img, (150, 150))
-    img = np.array(img, axis=0)
-    img = img / 255.0  # Normalizar la imagen
-
-    resultado = modelo_cargado.predict(img)
-
-    resultado = "Persona con neumonía" if resultado[0][0] > 0.5 else "Persona sin neumonía"
-
-    return render_template('resultado.html', resultado=resultado)
+    return render_template('resultado.html', predictions=predictions[0], class_names=class_names, zip=zip)
 
 
 
