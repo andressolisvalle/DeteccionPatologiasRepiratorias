@@ -19,7 +19,7 @@ def index():
 def detect():
     try:
         response = request.files['xray_image']
-        model = load_model('modelo_neumonia2.h5')
+        model = load_model('modelo_neumonia2.1.h5')
         class_names = ['NORMAL', 'NEUMONIA']
 
         img = Image.open(BytesIO(response.read()))
